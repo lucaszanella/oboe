@@ -28,6 +28,7 @@
 
 #include <player/OneShotSampleSource.h>
 #include <player/SimpleMultiPlayer.h>
+#include <memory>
 
 static const char* TAG = "DrumPlayerJNI";
 
@@ -39,7 +40,7 @@ extern "C" {
 using namespace iolib;
 using namespace parselib;
 
-static SimpleMultiPlayer sDTPlayer;
+static std::shared_ptr<SimpleMultiPlayer> sDTPlayer = std::make_shared<SimpleMultiPlayer>();
 
 /**
  * Native (JNI) implementation of DrumPlayer.setupAudioStreamNative()
@@ -49,13 +50,13 @@ JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_setupAu
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", "init()");
 
     // we know in this case that the sample buffers are all 1-channel, 41K
-    sDTPlayer.setupAudioStream(numChannels);
+    sDTPlayer->setupAudioStream(numChannels);
 }
 
 JNIEXPORT void JNICALL
 Java_com_plausiblesoftware_drumthumper_DrumPlayer_startAudioStreamNative(
         JNIEnv *env, jobject thiz) {
-    sDTPlayer.startStream();
+    sDTPlayer->startStream();
 }
 
 /**
@@ -65,7 +66,7 @@ JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_teardow
     __android_log_print(ANDROID_LOG_INFO, TAG, "%s", "deinit()");
 
     // we know in this case that the sample buffers are all 1-channel, 44.1K
-    sDTPlayer.teardownAudioStream();
+    sDTPlayer->teardownAudioStream();
 }
 
 /**
@@ -92,7 +93,7 @@ JNIEXPORT jboolean JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_loa
     sampleBuffer->loadSampleData(&reader);
 
     OneShotSampleSource* source = new OneShotSampleSource(sampleBuffer, pan);
-    sDTPlayer.addSampleSource(source, sampleBuffer);
+    sDTPlayer->addSampleSource(source, sampleBuffer);
 
     delete[] buf;
 
@@ -103,36 +104,36 @@ JNIEXPORT jboolean JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_loa
  * Native (JNI) implementation of DrumPlayer.unloadWavAssetsNative()
  */
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_unloadWavAssetsNative(JNIEnv* env, jobject) {
-    sDTPlayer.unloadSampleData();
+    sDTPlayer->unloadSampleData();
 }
 
 /**
  * Native (JNI) implementation of DrumPlayer.trigger()
  */
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_trigger(JNIEnv* env, jobject, jint index) {
-    sDTPlayer.triggerDown(index);
+    sDTPlayer->triggerDown(index);
 }
 
 /**
  * Native (JNI) implementation of DrumPlayer.getOutputReset()
  */
 JNIEXPORT jboolean JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_getOutputReset(JNIEnv*, jobject) {
-    return sDTPlayer.getOutputReset();
+    return sDTPlayer->getOutputReset();
 }
 
 /**
  * Native (JNI) implementation of DrumPlayer.clearOutputReset()
  */
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_clearOutputReset(JNIEnv*, jobject) {
-    sDTPlayer.clearOutputReset();
+    sDTPlayer->clearOutputReset();
 }
 
 /**
  * Native (JNI) implementation of DrumPlayer.restartStream()
  */
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_restartStream(JNIEnv*, jobject) {
-    sDTPlayer.resetAll();
-    if (sDTPlayer.openStream() && sDTPlayer.startStream()){
+    sDTPlayer->resetAll();
+    if (sDTPlayer->openStream() && sDTPlayer->startStream()){
         __android_log_print(ANDROID_LOG_INFO, TAG, "openStream successful");
     } else {
         __android_log_print(ANDROID_LOG_ERROR, TAG, "openStream failed");
@@ -141,22 +142,22 @@ JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_restart
 
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_setPan(
         JNIEnv *env, jobject thiz, jint index, jfloat pan) {
-    sDTPlayer.setPan(index, pan);
+    sDTPlayer->setPan(index, pan);
 }
 
 JNIEXPORT jfloat JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_getPan(
         JNIEnv *env, jobject thiz, jint  index) {
-    return sDTPlayer.getPan(index);
+    return sDTPlayer->getPan(index);
 }
 
 JNIEXPORT void JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_setGain(
         JNIEnv *env, jobject thiz, jint  index, jfloat gain) {
-    sDTPlayer.setGain(index, gain);
+    sDTPlayer->setGain(index, gain);
 }
 
 JNIEXPORT jfloat JNICALL Java_com_plausiblesoftware_drumthumper_DrumPlayer_getGain(
         JNIEnv *env, jobject thiz, jint index) {
-    return sDTPlayer.getGain(index);
+    return sDTPlayer->getGain(index);
 }
 
 #ifdef __cplusplus
